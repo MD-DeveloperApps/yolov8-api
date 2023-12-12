@@ -88,8 +88,10 @@ def detect_objects_on_image(buf):
 def detect_json(buf):
     model = YOLO(MODELNAME+'/'+NAME)
     results = model.predict(Image.open(buf))
-    resultsjson = results.tojson()
-    yield json.dumps(resultsjson)
+    for result in results
+      result_json = json.loads(result.pandas().xyxy[0].to_json(orient="records"))
+        return result_json
+
 
 def detect_objects_image(buf):
     model = YOLO(MODELNAME+'/'+NAME)
