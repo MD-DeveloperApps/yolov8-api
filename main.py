@@ -43,9 +43,6 @@ def detect():
     elif(show=='PARAMETERS'):
         boxes = detect_objects_on_image(buf.stream)
         return jsonify(boxes)
-    elif (show=='JSON'):
-        json = detect_json(buf.stream)
-        return jsonify(json)
     return jsonify({'status': 'error', 'message': 'Invalid request'})
 
 
@@ -53,6 +50,7 @@ def detect():
 def uploaded_file(filename):
     print(filename)
     return send_file(f'uploads/{filename}', mimetype='image/jpeg')
+
 
 #utils
 
@@ -84,13 +82,6 @@ def detect_objects_on_image(buf):
             x1, y1, x2, y2, result.names[class_id], prob
         ])
     return output
-
-def detect_json(buf):
-    model = YOLO(MODELNAME+'/'+NAME)
-    results = model.predict(Image.open(buf))
-    for result in results
-      result_json = json.loads(result.pandas().xyxy[0].to_json(orient="records"))
-        return result_json
 
 
 def detect_objects_image(buf):
