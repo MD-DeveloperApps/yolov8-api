@@ -43,6 +43,9 @@ def detect():
     elif(show=='PARAMETERS'):
         boxes = detect_objects_on_image(buf.stream)
         return jsonify(boxes)
+    elif (show=='JSON'):
+        json = detect_json(buf.stream)
+        return jsonify(json)
     return jsonify({'status': 'error', 'message': 'Invalid request'})
 
 
@@ -82,6 +85,11 @@ def detect_objects_on_image(buf):
         ])
     return output
 
+def detect_json(buf):
+    model = YOLO(MODELNAME+'/'+NAME)
+    results = model.predict(Image.open(buf))
+    resultsjson = results.tojson()
+    yield json.dumps(resultsjson)
 
 def detect_objects_image(buf):
     model = YOLO(MODELNAME+'/'+NAME)
