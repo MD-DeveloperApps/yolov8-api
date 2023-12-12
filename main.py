@@ -16,8 +16,8 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MODELS_FOLDER'] = 'models'
 
-MODELNAME = app.config['MODELS_FOLDER']+'/yolov8n.pt'
-
+MODELNAME = app.config['MODELS_FOLDER']
+NAME = 'yolov8n.pt'
 
 @app.route("/")
 def root():
@@ -29,6 +29,8 @@ def root():
 def detect():
     buf= request.files['image_file']
     show= request.form['show'] 
+    model= request.form['model']
+    NAME = model
     if(show=='BLOB'):
         boxes = detect_objects_image(buf.stream)
         return jsonify(boxes)
@@ -54,7 +56,7 @@ def getDateStr():
     return datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 def detectandsave(buf):
-    model = YOLO(MODELNAME)
+    model = YOLO(MODELNAME+'/'+NAME)
     results = model.predict(Image.open(buf))
     result = results[0]
     img= blobWithBoxes(buf, result.boxes)
@@ -64,7 +66,7 @@ def detectandsave(buf):
     return url
     
 def detect_objects_on_image(buf):
-    model = YOLO(MODELNAME)
+    model = YOLO(MODELNAME+'/'+NAME)
     results = model.predict(Image.open(buf))
     result = results[0]
     output = []
@@ -81,7 +83,7 @@ def detect_objects_on_image(buf):
 
 
 def detect_objects_image(buf):
-    model = YOLO(MODELNAME)
+    model = YOLO(MODELNAME+'/'+NAME)
     results = model.predict(Image.open(buf))
     result = results[0]
     filename = secure_filename(getDateStr()+random.randint(1, 1000000).__str__()+'.jpg')
