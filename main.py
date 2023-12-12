@@ -30,6 +30,9 @@ def detect():
     buf= request.files['image_file']
     show= request.form['show'] 
     model= request.form['model']
+    existmodel = os.path.isfile(MODELNAME+'/'+model)
+    if(existmodel!=True):
+        return jsonify({'status': 'error', 'message': 'Model not found'})
     NAME = model
     if(show=='BLOB'):
         boxes = detect_objects_image(buf.stream)
@@ -47,8 +50,6 @@ def detect():
 def uploaded_file(filename):
     print(filename)
     return send_file(f'uploads/{filename}', mimetype='image/jpeg')
-
-
 
 #utils
 

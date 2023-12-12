@@ -12,6 +12,7 @@
 | :-------- | :------- | :------------------------- |
 | `show` | `string` | **Required**. BLOB-PARAMETERS-URL |
 | `image_file` | `file` | **Required**. JPG-PNG |
+| `model` | `string` | **Required**. yolov8n.pt |
 
 #### Get image
 
