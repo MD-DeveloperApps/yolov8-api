@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from PIL import Image, ImageDraw
-from flask import request, Flask, jsonify, send_file
+from PIL import Image, ImageDraw, ImageFont
+from flask import request, Flask, jsonify, send_file, render_template
 from ultralytics import YOLO
 from waitress import serve
 from io import BytesIO
@@ -10,19 +10,33 @@ import datetime
 import random
 import os
 from werkzeug.utils import secure_filename
-app = Flask(__name__)
+import cv2
+app = Flask(__name__,template_folder='templates')
 UPLOAD_FOLDER = 'uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MODELS_FOLDER'] = 'models'
+app.config['FONT_FOLDER'] = 'fonts'
 
 MODELNAME = app.config['MODELS_FOLDER']
-NAME = 'yolov8n.pt'
+NAME = 'yolov8n-face.pt'
+FONT = app.config['FONT_FOLDER']
 
 @app.route("/")
 def root():
-    with open('index.html') as f:
-        return f.read()
+    images = os.listdir(UPLOAD_FOLDER)
+    
+    # Full path to each image file
+    image_paths = [os.path.join(UPLOAD_FOLDER, image) for image in images]
+    
+    # Sort the images by modification time (most recent first)
+    images_sorted = sorted(image_paths, key=os.path.getmtime, reverse=True)
+    
+    # Generate URLs for the sorted images
+    images_sorted_urls = [f'{request.host_url}{image}' for image in images_sorted]
+
+    return render_template('index.html', images=images_sorted_urls)
+    
 
 
 @app.route("/detect", methods=['POST'])
@@ -52,6 +66,25 @@ def uploaded_file(filename):
     return send_file(f'uploads/{filename}', mimetype='image/jpeg')
 
 
+@app.route('/detectwithcamera', methods=['POST'])
+def detectwithcamera():
+    cap = cv2.VideoCapture('https://aiworks:aiworks2021@192.168.110.61/api/holographic/stream/live_low.mp4?')
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    model= request.form['model']
+    while cap.isOpened():
+        ret, frame = cap.read()
+        #print(ret)
+        if not ret:
+            break
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        transformtoimage = Image.fromarray(frame)
+        buf = BytesIO()
+        transformtoimage.save(buf, format='JPEG')
+        buf.seek(0)
+        detectandsavemodel(buf, model)
+
 #utils
 
 def getDateStr():
@@ -61,7 +94,18 @@ def detectandsave(buf):
     model = YOLO(MODELNAME+'/'+NAME)
     results = model.predict(Image.open(buf))
     result = results[0]
-    img= blobWithBoxes(buf, result.boxes)
+    print(result)
+    img= blobWithBoxes(buf, result.boxes, result.names)
+    filename = secure_filename(getDateStr()+random.randint(1, 1000000).__str__()+'.jpg')
+    img.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    url = f'{request.host_url}{UPLOAD_FOLDER}/{filename}'
+    return url
+def detectandsavemodel(buf, model):
+    model = YOLO(MODELNAME+'/'+model)
+    results = model.predict(Image.open(buf))
+    result = results[0]
+    #print(result)
+    img= blobWithBoxes(buf, result.boxes, result.names)
     filename = secure_filename(getDateStr()+random.randint(1, 1000000).__str__()+'.jpg')
     img.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
     url = f'{request.host_url}{UPLOAD_FOLDER}/{filename}'
@@ -104,7 +148,7 @@ def image_to_json(image_path):
 
     return json_string
 
-def blobWithBoxes(image, boxes):
+def blobWithBoxes(image, boxes, names,line_width=3, font_size=20, font_color='red'):
     """
     Function receives an image and an array of bounding boxes
     and returns an image with bounding boxes drawn on it
@@ -114,13 +158,13 @@ def blobWithBoxes(image, boxes):
     """
     img = Image.open(image)
     draw = ImageDraw.Draw(img)
+    font_path = FONT+'/OpenSans-Bold.ttf'
+    font_size = 20
+    font=ImageFont.truetype(font_path, font_size)
     for box in boxes:
-        draw.rectangle(box.xyxy[0].tolist(), outline='red')
-        draw.text(
-            box.xyxy[0, :2].tolist(),
-            f'{box.cls[0]} {box.conf[0]:.2f}',
-            fill='red'
-        )
+        #print(box)
+        draw.rectangle(box.xyxy[0].tolist(), outline='blue', width=line_width)
+        draw.text((box.xyxy[0][0], box.xyxy[0][1]), f'{names[box.cls[0].item()]} {round(box.conf[0].item(), 2)}', fill='blue', font=font)
 
     return img
 

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detections</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery/dist/css/lightgallery.min.css">
+</head>
+<style>
+    .gallery-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .gallery-item {
+        margin-bottom: 20px;
+        flex-basis: calc(33.333% - 20px);
+        cursor: pointer;
+    }
+
+    .gallery-item img {
+        width: 100%;
+        height: auto;
+    }
+</style>
+<body>
+    <div class="gallery-container" id="gallery-container">
+        {% for detection in images %}
+        <a href="{{ detection }}" data-size="1024x768" class="gallery-item">
+            <img src="{{ detection }}" alt="{{ detection.label }}" />
+        </a>
+        {% endfor %}
+    </div>
+</body>
+<script type="module">
+    import lightGallery from "https://cdn.skypack.dev/lightgallery@2.0.0-beta.3";
+
+    import lgZoom from "https://cdn.skypack.dev/lightgallery@2.0.0-beta.3/plugins/zoom";
+
+    import lgShare from "https://cdn.skypack.dev/lightgallery@2.0.0-beta.3/plugins/share";
+
+    import lgHash from "https://cdn.skypack.dev/lightgallery@2.0.0-beta.3/plugins/hash";
+
+    lightGallery(document.getElementById("gallery-container"), {
+        speed: 500,
+        plugins: [lgZoom, lgShare, lgHash]
+    });
+    const seconds = 5;
+    setInterval(() => {
+        location.reload();
+    }, seconds * 1000);
+
+</script>
+
+</html>
